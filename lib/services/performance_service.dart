@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'native_keyboard_service.dart';
 
 // ============================================================================
 // PERFORMANCE OPTIMIZATIONS for Exam Context
@@ -10,10 +10,16 @@ class PerformanceOptimizations {
   // 1. PRE-WARM THE ENGINE
   static Future<void> preWarmKeyboard() async {
     // Call during app initialization, before exam starts
-    const channel = MethodChannel('com.exam.keyboard/input');
     try {
-      await channel.invokeMethod('warmup');
-      debugPrint('Keyboard pre-warmed successfully');
+      final nativeKeyboard = NativeKeyboardService();
+      final isAvailable = await nativeKeyboard.isNativeKeyboardAvailable();
+      
+      if (isAvailable) {
+        await nativeKeyboard.initialize();
+        debugPrint('Native keyboard pre-warmed successfully');
+      } else {
+        debugPrint('Native keyboard not available, skipping pre-warm');
+      }
     } catch (e) {
       debugPrint('Keyboard pre-warm failed: $e');
     }
@@ -22,10 +28,16 @@ class PerformanceOptimizations {
   
   // 2. BATCH OPERATIONS (for autocomplete if added later)
   static Future<void> insertMultipleChars(String text) async {
-    const channel = MethodChannel('com.exam.keyboard/input');
     try {
-      // Single call instead of multiple
-      await channel.invokeMethod('insertText', {'text': text});
+      final nativeKeyboard = NativeKeyboardService();
+      final isAvailable = await nativeKeyboard.isNativeKeyboardAvailable();
+      
+      if (isAvailable) {
+        // Single call instead of multiple - native implementation
+        await nativeKeyboard.insertText(text);
+      } else {
+        debugPrint('Native keyboard not available for batch insert');
+      }
     } catch (e) {
       debugPrint('Batch insert failed: $e');
     }
@@ -55,12 +67,15 @@ class ReliabilityFeatures {
   
   // 2. ERROR RECOVERY
   static Future<void> insertTextWithRetry(String text, {int maxRetries = 3}) async {
-    const channel = MethodChannel('com.exam.keyboard/input');
+    final nativeKeyboard = NativeKeyboardService();
     
     for (int i = 0; i < maxRetries; i++) {
       try {
-        await channel.invokeMethod('insertText', {'text': text});
-        return; // Success
+        final success = await nativeKeyboard.insertText(text);
+        if (success) return; // Success
+        
+        // If native fails, throw error to trigger retry
+        throw Exception('Native insert failed');
       } catch (e) {
         if (i == maxRetries - 1) rethrow;
         await Future.delayed(const Duration(milliseconds: 10));

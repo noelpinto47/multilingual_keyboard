@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/minimal_exam_keyboard.dart';
+import '../widgets/native_text_input.dart';
 import '../services/performance_service.dart';
 
 class KeyboardDemoPage extends StatefulWidget {
@@ -38,21 +39,20 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: TextField(
-                  controller: _textController,
+                child: NativeTextInput(
                   maxLines: null,
                   expands: true,
                   readOnly: true, // Disable system keyboard
                   showCursor: true,
                   textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(fontSize: 16),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    hintText: 'Start typing with the keyboard below...',
-                    labelText: 'Exam Text Input',
+                    hintText: 'Start typing with native-optimized keyboard below...',
+                    labelText: 'Exam Text Input (Native Mode)',  
                     contentPadding: EdgeInsets.all(12),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
-                  style: const TextStyle(fontSize: 16),
                 ),
               ),
             ),
@@ -78,11 +78,13 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
           
           const SizedBox(height: 8),
           
-          // Multilingual keyboard - auto-sized to content
+          // Multilingual keyboard with native Android integration
           MinimalExamKeyboard(
             supportedLanguages: const ['en', 'hi', 'es', 'fr'],
-            getCurrentText: () => _textController.text,
+            useNativeKeyboard: true, // Enable native integration
             onTextInput: (text) {
+              // This is now a fallback for non-native platforms only
+              // On Android, text input is handled natively for optimal performance
               if (text == '⌫') {
                 // Handle backspace 
                 if (_textController.text.isNotEmpty) {

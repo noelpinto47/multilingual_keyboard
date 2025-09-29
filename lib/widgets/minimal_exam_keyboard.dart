@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 import '../models/keyboard_layout.dart';
 import '../widgets/keyboard_widgets.dart';
+import '../services/native_keyboard_service.dart';
 
 class MinimalExamKeyboard extends StatefulWidget {
   final List<String> supportedLanguages; // e.g., ['en', 'hi', 'es']
-  final Function(String) onTextInput;
-  final String Function()? getCurrentText; // Callback to get current text
+  final Function(String)? onTextInput; // Optional fallback for non-native platforms
+  final bool useNativeKeyboard; // Enable/disable native integration
   
   const MinimalExamKeyboard({
     super.key,
     required this.supportedLanguages,
-    required this.onTextInput,
-    this.getCurrentText,
+    this.onTextInput,
+    this.useNativeKeyboard = true,
   });
 
   @override
@@ -19,20 +21,38 @@ class MinimalExamKeyboard extends StatefulWidget {
 }
 
 class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
-  // Platform channel for native keyboard integration
-  // static const _channel = MethodChannel('com.exam.keyboard/input');
-  
   String _currentLanguage = 'en';
   final Map<String, List<List<String>>> _layouts = {};
-  bool _isUpperCase = true; // Start with capitalization ON
-  bool _manualCapsLock = false; // Track if user manually toggled caps
-
+  bool _isUpperCase = false; // Manual control only
   bool _showNumericKeyboard = false;
+  
+  // Native keyboard integration
+  late final NativeKeyboardService _nativeKeyboard;
+  bool _isNativeAvailable = false;
   
   @override
   void initState() {
     super.initState();
+    _nativeKeyboard = NativeKeyboardService();
     _loadKeyboardLayouts();
+    _initializeNativeKeyboard();
+  }
+  
+  Future<void> _initializeNativeKeyboard() async {
+    if (widget.useNativeKeyboard && Platform.isAndroid) {
+      _isNativeAvailable = await _nativeKeyboard.isNativeKeyboardAvailable();
+      if (_isNativeAvailable) {
+        await _nativeKeyboard.initialize();
+        debugPrint('Native keyboard initialized successfully');
+        
+        // Clear native text buffer to start fresh
+        await _nativeKeyboard.clearAllText();
+      } else {
+        debugPrint('Native keyboard not available, falling back to Flutter implementation');
+      }
+    } else {
+      debugPrint('Native keyboard disabled or not supported on this platform');
+    }
   }
   
   void _loadKeyboardLayouts() {
@@ -43,46 +63,56 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     }
   }
   
-  // CRITICAL PATH: This runs on every key press
+  // CRITICAL PATH: This runs on every key press - OPTIMIZED FOR NATIVE
   Future<void> _onKeyPress(String key) async {
-    // Optimized: Single method call, no extra logic
     try {
-      // Handle auto-capitalization logic
+      // Handle manual capitalization only
       String finalKey = key;
       if (_isUpperCase && key.length == 1 && key.toLowerCase() != key.toUpperCase()) {
         finalKey = key.toUpperCase();
       }
       
-      // For demo purposes, call the callback directly
-      // In real implementation, this would use platform channel
-      widget.onTextInput(finalKey);
+      // Native Android integration - FASTEST PATH
+      if (_isNativeAvailable) {
+        final success = await _nativeKeyboard.insertText(finalKey);
+        if (success) {
+          return;
+        }
+      }
       
-      // Auto-capitalization logic after text is updated
-      Future.microtask(() => _handleAutoCapitalization(finalKey));
+      // Fallback to Flutter callback for non-native platforms
+      widget.onTextInput?.call(finalKey);
       
-      // Platform channel call (commented for demo)
-      // await _channel.invokeMethod('insertText', {'text': finalKey});
     } catch (e) {
       // Silent fail in exam context - don't disrupt typing
       debugPrint('Insert failed: $e');
+      // Fallback to Flutter implementation
+      widget.onTextInput?.call(key);
     }
   }
   
-  void _onBackspace() {
-    // Handle backspace functionality
-    // For demo, we'll simulate backspace by removing last character
-    // In real implementation, this would use platform channel
-    
-    widget.onTextInput('⌫'); // Special backspace signal
-    
-    // Check auto-capitalization after backspace
-    Future.microtask(() => _handleAutoCapitalization(''));
+  Future<void> _onBackspace() async {
+    try {
+      // Native Android integration - FASTEST PATH
+      if (_isNativeAvailable) {
+        final success = await _nativeKeyboard.deleteBackward(1);
+        if (success) {
+          return;
+        }
+      }
+      
+      // Fallback to Flutter callback
+      widget.onTextInput?.call('⌫'); // Special backspace signal
+      
+    } catch (e) {
+      debugPrint('Backspace failed: $e');
+      widget.onTextInput?.call('⌫');
+    }
   }
 
   void _toggleCase() {
     setState(() {
       _isUpperCase = !_isUpperCase;
-      _manualCapsLock = true; // User manually toggled, disable auto-caps temporarily
     });
   }
 
@@ -102,39 +132,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     });
   }
 
-  void _handleAutoCapitalization(String lastKey) {
-    // Don't auto-adjust if user manually toggled caps
-    if (_manualCapsLock) return;
-    
-    // Get current text from callback
-    String currentText = widget.getCurrentText?.call() ?? '';
-    
-    setState(() {
-      if (currentText.isEmpty) {
-        // At the beginning of text, enable capitalization
-        _isUpperCase = true;
-        _manualCapsLock = false; // Reset manual caps lock
-      } else if (lastKey.isNotEmpty && lastKey.length == 1 && lastKey.toLowerCase() != lastKey.toUpperCase()) {
-        // After typing a letter while caps is on, turn off caps
-        if (_isUpperCase) {
-          _isUpperCase = false;
-        }
-      } else if (currentText.endsWith('. ') || currentText.endsWith('.\n') || 
-                 currentText.endsWith('! ') || currentText.endsWith('!\n') ||
-                 currentText.endsWith('? ') || currentText.endsWith('?\n')) {
-        // After sentence-ending punctuation + space/newline, enable capitalization
-        _isUpperCase = true;
-        _manualCapsLock = false; // Reset manual caps lock
-      } else if (lastKey.isEmpty) {
-        // This is a backspace, check if we should enable caps
-        String trimmed = currentText.trimRight();
-        if (trimmed.isEmpty || trimmed.endsWith('.') || trimmed.endsWith('!') || trimmed.endsWith('?')) {
-          _isUpperCase = true;
-          _manualCapsLock = false; // Reset manual caps lock
-        }
-      }
-    });
-  }
+
   
   @override
   Widget build(BuildContext context) {
@@ -329,15 +327,12 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
         children: [
           // Row 1: Numbers
           KeyboardWidgets.buildKeyRow(layout[0], false, _onKeyPress),
-          const SizedBox(height: 4),
           
           // Row 2: Symbols
           KeyboardWidgets.buildKeyRow(layout[1], false, _onKeyPress),
-          const SizedBox(height: 4),
           
           // Row 3: Special symbols with backspace
           KeyboardWidgets.buildNumericBottomRow(layout[2], _onKeyPress, _onBackspace),
-          const SizedBox(height: 4),
 
           // Row 4: Unified bottom row
           _buildUnifiedBottomRow(),
@@ -365,7 +360,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
           
           // Comma key
           Expanded(
-            flex: 1,
+            flex: 2,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: KeyboardWidgets.buildKey(',', false, _onKeyPress),
@@ -410,7 +405,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
           
           // Period key
           Expanded(
-            flex: 1,
+            flex: 2,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: KeyboardWidgets.buildKey('.', false, _onKeyPress),
