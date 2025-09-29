@@ -43,15 +43,10 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       _isNativeAvailable = await _nativeKeyboard.isNativeKeyboardAvailable();
       if (_isNativeAvailable) {
         await _nativeKeyboard.initialize();
-        debugPrint('Native keyboard initialized successfully');
-        
         // Clear native text buffer to start fresh
         await _nativeKeyboard.clearAllText();
-      } else {
-        debugPrint('Native keyboard not available, falling back to Flutter implementation');
       }
     } else {
-      debugPrint('Native keyboard disabled or not supported on this platform');
     }
   }
   
@@ -85,7 +80,6 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       
     } catch (e) {
       // Silent fail in exam context - don't disrupt typing
-      debugPrint('Insert failed: $e');
       // Fallback to Flutter implementation
       widget.onTextInput?.call(key);
     }
@@ -105,7 +99,6 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       widget.onTextInput?.call('⌫'); // Special backspace signal
       
     } catch (e) {
-      debugPrint('Backspace failed: $e');
       widget.onTextInput?.call('⌫');
     }
   }

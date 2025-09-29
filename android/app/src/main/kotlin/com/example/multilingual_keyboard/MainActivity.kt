@@ -116,10 +116,8 @@ class MainActivity : FlutterActivity() {
     
     private fun insertTextNative(text: String) {
         // Update native text buffer
-        android.util.Log.d("NativeKeyboard", "Inserting text: '$text' at position $cursorPosition")
         textContent.insert(cursorPosition, text)
         cursorPosition += text.length
-        android.util.Log.d("NativeKeyboard", "New text buffer: '${textContent.toString()}', cursor: $cursorPosition")
     }
     
     private fun deleteBackwardNative(count: Int) {
@@ -133,7 +131,7 @@ class MainActivity : FlutterActivity() {
         // Notify Flutter of text changes so it can update the UI
         runOnUiThread {
             val text = textContent.toString()
-            android.util.Log.d("NativeKeyboard", "Notifying Flutter: text='$text', cursor=$cursorPosition")
+            // Notify Flutter with minimal overhead
             methodChannel?.invokeMethod("onTextChanged", mapOf(
                 "text" to text,
                 "cursorPosition" to cursorPosition

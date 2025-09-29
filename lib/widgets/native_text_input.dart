@@ -57,23 +57,20 @@ class _NativeTextInputState extends State<NativeTextInput> {
           
           // Set up callback to receive text changes from native
           _nativeKeyboard.addTextChangeCallback((text, cursorPosition) {
-            debugPrint('NativeTextInput received: "$text" at position $cursorPosition');
             setState(() {
               _controller.text = text;
               _controller.selection = TextSelection.fromPosition(
                 TextPosition(offset: cursorPosition),
               );
             });
-            debugPrint('Updated TextEditingController to: "${_controller.text}"');
           });
           
           setState(() {
             _isNativeConnected = true;
           });
-          debugPrint('Native text input integration successful');
         }
       } catch (e) {
-        debugPrint('Failed to initialize native text input: $e');
+        // Silent error handling for performance
       }
     }
   }
@@ -92,10 +89,9 @@ class _NativeTextInputState extends State<NativeTextInput> {
       final currentText = _controller.text;
       if (currentText.isNotEmpty) {
         // Native service is now aware of current text context
-        debugPrint('Synced text with native service: ${currentText.length} characters');
       }
     } catch (e) {
-      debugPrint('Failed to sync with native service: $e');
+      // Silent error handling for performance
     }
   }
   
