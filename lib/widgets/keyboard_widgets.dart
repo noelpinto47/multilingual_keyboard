@@ -13,25 +13,17 @@ class KeyboardWidgets {
     return GestureDetector(
       onTap: () => onKeyPress(isUpperCase ? displayKey : key),
       child: Container(
-        height: 42,
+        padding: EdgeInsets.symmetric(vertical: 8.0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFFD0D0D0), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              offset: const Offset(0, 1),
-              blurRadius: 2,
-            ),
-          ],
+          border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
         ),
         child: Center(
           child: Text(
             displayKey,
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
           ),
@@ -44,16 +36,12 @@ class KeyboardWidgets {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 42,
+        padding: const EdgeInsets.symmetric(vertical: 9.0), // Match regular key padding
         decoration: BoxDecoration(
-          color: isActive 
-              ? const Color(0xFF007AFF) // iOS blue for active keys
-              : const Color(0xFFB8B8B8), // Light gray for special keys
+          color: const Color(0xFFB8B8B8), // Light gray for special keys
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isActive 
-                ? const Color(0xFF0056CC)
-                : const Color(0xFFA0A0A0), 
+            color: const Color.fromARGB(117, 160, 160, 160), 
             width: 1
           ),
           boxShadow: [
@@ -69,7 +57,6 @@ class KeyboardWidgets {
             label,
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
               color: isActive ? Colors.white : Colors.black,
             ),
           ),
@@ -79,18 +66,12 @@ class KeyboardWidgets {
   }
 
   static Widget buildKeyRow(List<String> keys, bool isUpperCase, Function(String) onKeyPress) {
-    return SizedBox(
-      height: 50, // Fixed height for keyboard row
-      child: Row(
-        children: keys.map((key) {
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: buildKey(key, isUpperCase, onKeyPress),
-            ),
-          );
-        }).toList(),
-      ),
+    return Row(
+      children: keys.map((key) {
+        return Expanded(
+          child: buildKey(key, isUpperCase, onKeyPress),
+        );
+      }).toList(),
     );
   }
 
@@ -101,46 +82,33 @@ class KeyboardWidgets {
     VoidCallback onToggleCase,
     VoidCallback onBackspace,
   ) {
-    return SizedBox(
-      height: 50, // Fixed height for keyboard row
-      child: Row(
-        children: [
-          // Shift key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: buildSpecialKey(
-                '⇧',
-                onTap: onToggleCase,
-                isActive: isUpperCase,
-              ),
-            ),
+    return Row(
+      children: [
+        // Shift key
+        Expanded(
+          child: buildSpecialKey(
+            '⇧',
+            onTap: onToggleCase,
+            isActive: isUpperCase,
           ),
-          
-          // Letter keys
-          ...keys.map((key) {
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: buildKey(key, isUpperCase, onKeyPress),
-              ),
-            );
-          }),
-          
-          // Backspace key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: buildSpecialKey(
-                '⌫',
-                onTap: onBackspace,
-              ),
-            ),
+        ),
+        
+        // Letter keys
+        ...keys.map((key) {
+          return Expanded(
+            child: buildKey(key, isUpperCase, onKeyPress),
+          );
+        }),
+        
+        // Backspace key
+        Expanded(
+          flex: 1,
+          child: buildSpecialKey(
+            '⌫',
+            onTap: onBackspace,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -149,45 +117,33 @@ class KeyboardWidgets {
     Function(String) onKeyPress,
     VoidCallback onBackspace,
   ) {
-    return SizedBox(
-      height: 50, // Fixed height for keyboard row
-      child: Row(
-        children: [
-          // Special symbols key (wider)
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: buildSpecialKey(
-                keys[0], // '#+='
-                onTap: () => onKeyPress(keys[0]),
-              ),
-            ),
+    return Row(
+      children: [
+        // Special symbols key (wider)
+        Expanded(
+          flex: 1,
+          child: buildSpecialKey(
+            keys[0], // '#+='
+            onTap: () => onKeyPress(keys[0]),
           ),
-          
-          // Regular symbol keys
-          ...keys.skip(1).map((key) {
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: buildKey(key, false, onKeyPress),
-              ),
-            );
-          }),
-          
-          // Backspace key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: buildSpecialKey(
-                '⌫',
-                onTap: onBackspace,
-              ),
-            ),
+        ),
+        
+        // Regular symbol keys
+        ...keys.skip(1).map((key) {
+          return Expanded(
+            child: buildKey(key, false, onKeyPress),
+          );
+        }),
+        
+        // Backspace key
+        Expanded(
+          flex: 1,
+          child: buildSpecialKey(
+            '⌫',
+            onTap: onBackspace,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

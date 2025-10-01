@@ -281,7 +281,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     final layout = _layouts[_currentLanguage] ?? [];
     
     return Padding(
-      padding: const EdgeInsets.all(6.0),
+      padding: const EdgeInsets.all(1.0),
       child: Column(
         mainAxisSize: MainAxisSize.min, // Size to content
         children: [
@@ -314,7 +314,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     final layout = KeyboardLayout.getNumericLayout();
     
     return Padding(
-      padding: const EdgeInsets.all(6.0),
+      padding: const EdgeInsets.all(1.0),
       child: Column(
         mainAxisSize: MainAxisSize.min, // Size to content
         children: [
@@ -335,89 +335,64 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   }
 
   Widget _buildUnifiedBottomRow() {
-    return SizedBox(
-      height: 50, // Fixed height for keyboard row
-      child: Row(
-        children: [
-          // Toggle button (?123 or ABC)
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: KeyboardWidgets.buildSpecialKey(
-                _showNumericKeyboard ? 'ABC' : '?123',
-                onTap: _toggleNumericKeyboard,
-              ),
+    return Row(
+      children: [
+        // Toggle button (?123 or ABC)
+        Expanded(
+          flex: 2,
+          child: KeyboardWidgets.buildSpecialKey(
+            _showNumericKeyboard ? 'ABC' : '?123',
+            onTap: _toggleNumericKeyboard,
+          ),
+        ),
+        
+        // Comma key
+        Expanded(
+          flex: 2,
+          child: KeyboardWidgets.buildKey(',', false, _onKeyPress),
+        ),
+        
+        // Spacebar with language switching
+        Expanded(
+          flex: 6,
+          child: GestureDetector(
+            onTap: () => _onKeyPress(' '),
+            onLongPress: _toggleLanguageSelector,
+            child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
+        ),
+        child: Center(
+          child: Text(
+            '␣',
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.black,
             ),
           ),
-          
-          // Comma key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: KeyboardWidgets.buildKey(',', false, _onKeyPress),
-            ),
-          ),
-          
-          // Spacebar with language switching
-          Expanded(
-            flex: 6,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: GestureDetector(
-                onTap: () => _onKeyPress(' '),
-                onLongPress: _toggleLanguageSelector,
-                child: Container(
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFD0D0D0), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        offset: const Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'space',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          // Period key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: KeyboardWidgets.buildKey('.', false, _onKeyPress),
-            ),
-          ),
-          
-          // Enter key
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: KeyboardWidgets.buildSpecialKey(
-                '↵',
-                onTap: () => _onKeyPress('\n'),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+          ),
+        ),
+        
+        // Period key
+        Expanded(
+          flex: 2,
+          child: KeyboardWidgets.buildKey('.', false, _onKeyPress),
+        ),
+        
+        // Enter key
+        Expanded(
+          flex: 2,
+          child: KeyboardWidgets.buildSpecialKey(
+            '↵',
+            onTap: () => _onKeyPress('\n'),
+          ),
+        ),
+      ],
     );
   }
 }

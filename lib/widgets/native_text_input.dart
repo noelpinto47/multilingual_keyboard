@@ -12,6 +12,8 @@ class NativeTextInput extends StatefulWidget {
   final bool readOnly;
   final bool showCursor;
   final InputDecoration? decoration;
+  final VoidCallback? onFocusGained;
+  final VoidCallback? onFocusLost;
   
   const NativeTextInput({
     super.key,
@@ -24,6 +26,8 @@ class NativeTextInput extends StatefulWidget {
     this.readOnly = false,
     this.showCursor = true,
     this.decoration,
+    this.onFocusGained,
+    this.onFocusLost,
   });
 
   @override
@@ -76,9 +80,15 @@ class _NativeTextInputState extends State<NativeTextInput> {
   }
   
   void _handleFocusChange() {
-    if (_focusNode.hasFocus && _isNativeConnected) {
-      // Text field gained focus - native keyboard can now interact with it
-      _syncTextWithNative();
+    if (_focusNode.hasFocus) {
+      // Text field gained focus
+      if (_isNativeConnected) {
+        _syncTextWithNative();
+      }
+      widget.onFocusGained?.call();
+    } else {
+      // Text field lost focus
+      widget.onFocusLost?.call();
     }
   }
   

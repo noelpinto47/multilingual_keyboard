@@ -12,6 +12,17 @@ class KeyboardDemoPage extends StatefulWidget {
 
 class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
   final TextEditingController _textController = TextEditingController();
+  bool _showKeyboard = false;
+  
+  // Handle back button press - close keyboard if open, otherwise do nothing
+  Future<bool> _onWillPop() async {
+    if (_showKeyboard) {
+      // Close keyboard by removing focus from the text field
+      FocusScope.of(context).unfocus();
+      return false; // Don't exit the app
+    }
+    return false; // Never exit the app on back press
+  }
   
   @override
   void initState() {
@@ -22,7 +33,15 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false, // Prevent default back behavior - never exit app
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          // Custom back button handling: close keyboard if open, otherwise do nothing
+          await _onWillPop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text('Multilingual Exam Keyboard', style: TextStyle(color: Colors.white),),
@@ -46,9 +65,19 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                   showCursor: true,
                   textAlignVertical: TextAlignVertical.top,
                   style: const TextStyle(fontSize: 16),
+                  onFocusGained: () {
+                    setState(() {
+                      _showKeyboard = true;
+                    });
+                  },
+                  onFocusLost: () {
+                    setState(() {
+                      _showKeyboard = false;
+                    });
+                  },
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    hintText: 'Start typing with native-optimized keyboard below...',
+                    hintText: 'Tap here to show keyboard and start typing...',
                     labelText: 'Exam Text Input (Native Mode)',  
                     contentPadding: EdgeInsets.all(12),
                     floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -79,27 +108,59 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
           const SizedBox(height: 8),
           
           // Multilingual keyboard with native Android integration
-          MinimalExamKeyboard(
-            supportedLanguages: const ['en', 'hi', 'es', 'fr'],
-            useNativeKeyboard: true, // Enable native integration
-            onTextInput: (text) {
-              // This is now a fallback for non-native platforms only
-              // On Android, text input is handled natively for optimal performance
-              if (text == '⌫') {
-                // Handle backspace 
-                if (_textController.text.isNotEmpty) {
-                  _textController.text = _textController.text
-                      .substring(0, _textController.text.length - 1);
-                }
-              } else {
-                // Add text
-                _textController.text += text;
-              }
+          // Animated appearance when text field is focused
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOut,
+                )),
+                child: child,
+              );
             },
+            child: _showKeyboard
+                ? MinimalExamKeyboard(
+                    key: const ValueKey('keyboard'),
+                    supportedLanguages: const ['en', 'hi', 'es', 'fr'],
+                    useNativeKeyboard: true, // Enable native integration
+                    onTextInput: (text) {
+                      // This is now a fallback for non-native platforms only
+                      // On Android, text input is handled natively for optimal performance
+                      if (text == '⌫') {
+                        // Handle backspace 
+                        if (_textController.text.isNotEmpty) {
+                          _textController.text = _textController.text
+                              .substring(0, _textController.text.length - 1);
+                        }
+                      } else {
+                        // Add text
+                        _textController.text += text;
+                      }
+                    },
+                  )
+                : Container(
+                    key: const ValueKey('no-keyboard'),
+                    padding: const EdgeInsets.all(24),
+                    child: const Text(
+                      'Tap the text field above to show the keyboard',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
           ),
         ],
       ),
-    );
+    ), // Scaffold
+  ); // PopScope
   }
 
   @override
