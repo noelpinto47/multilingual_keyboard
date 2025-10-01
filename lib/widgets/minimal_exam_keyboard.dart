@@ -504,47 +504,54 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
         // Spacebar with language switching and language indicator
         Expanded(
           flex: 6,
-          child: GestureDetector(
-            onTap: () => _onKeyPress(' '),
-            onLongPress: _toggleLanguageSelector,
-            child: Container(
-              height: keyHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              decoration: BoxDecoration(
-                color: AppColors.keyBackground,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.keyBorder, width: 1),
-              ),
-              child: Stack(
-                children: [
-                  // Centered space symbol
-                  const Center(
-                    child: Text(
-                      '␣',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: AppColors.keyText,
-                      ),
-                    ),
-                  ),
-                  // Language indicator positioned on the right
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
+          child: Material(
+            color: AppColors.keyBackground,
+            borderRadius: BorderRadius.circular(6),
+            elevation: 1,
+            child: InkWell(
+              onTap: () => _onKeyPress(' '),
+              onLongPress: _toggleLanguageSelector,
+              borderRadius: BorderRadius.circular(6),
+              splashColor: AppColors.keySplashWithAlpha,
+              highlightColor: AppColors.keyHighlightWithAlpha,
+              child: Container(
+                height: keyHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.keyBorder, width: 1),
+                ),
+                child: Stack(
+                  children: [
+                    // Centered space symbol
+                    const Center(
                       child: Text(
-                        _getLanguageDisplayCode(_currentLanguage),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textGrey,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.3,
+                        '␣',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: AppColors.keyText,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    // Language indicator positioned on the right
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Text(
+                          _getLanguageDisplayCode(_currentLanguage),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textGrey,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

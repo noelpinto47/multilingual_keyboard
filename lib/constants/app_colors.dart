@@ -18,10 +18,10 @@ class AppColors {
   static const Color specialKeyDefault = Color(0xFFB8B8B8); // Default gray
   
   // Splash and highlight colors
-  static const Color keySplash = primary;
-  static const Color keyHighlight = primary;
-  static const Color specialKeySplash = Colors.white;
-  static const Color specialKeyHighlight = Colors.white;
+  static const Color keySplash = Colors.grey;
+  static const Color keyHighlight = Colors.grey;
+  static const Color specialKeySplash = Colors.grey;
+  static const Color specialKeyHighlight = Colors.grey;
   
   // Splash and highlight alpha values
   static const double splashAlpha = 0.3;
