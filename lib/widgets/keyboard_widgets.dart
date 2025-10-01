@@ -32,13 +32,55 @@ class KeyboardWidgets {
     );
   }
 
-  static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false}) {
+  // Helper method to get shift key display text based on state
+  static String _getShiftDisplayText(dynamic shiftState) {
+    if (shiftState.toString().contains('capsLock')) {
+      return '⇪'; // Caps lock symbol
+    } else if (shiftState.toString().contains('single')) {
+      return '⇧'; // Regular shift with dot for single mode
+    } else {
+      return '⇧'; // Regular shift
+    }
+  }
+  
+  // Helper method to get shift key color based on state
+  static Color _getShiftKeyColor(dynamic shiftState, bool isActive) {
+    if (shiftState.toString().contains('capsLock')) {
+      return const Color(0xFF007AFF); // Bright blue for caps lock
+    } else if (shiftState.toString().contains('single')) {
+      return const Color(0xFF87CEEB); // Light blue for single tap
+    } else {
+      return const Color(0xFFB8B8B8); // Default gray
+    }
+  }
+  
+  // Helper method to get shift text color based on state
+  static Color _getShiftTextColor(dynamic shiftState, bool isActive) {
+    if (shiftState.toString().contains('capsLock')) {
+      return Colors.white; // White text on blue background
+    } else if (shiftState.toString().contains('single')) {
+      return Colors.black; // Black text on light blue background
+    } else {
+      return Colors.black; // Default black
+    }
+  }
+  
+  // Helper method to get shift font weight based on state
+  static FontWeight _getShiftFontWeight(dynamic shiftState) {
+    if (shiftState.toString().contains('capsLock')) {
+      return FontWeight.bold; // Bold for caps lock
+    } else {
+      return FontWeight.normal; // Normal weight
+    }
+  }
+  
+  static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false, dynamic shiftState}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9.0), // Match regular key padding
         decoration: BoxDecoration(
-          color: const Color(0xFFB8B8B8), // Light gray for special keys
+          color: _getShiftKeyColor(shiftState, isActive),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: const Color.fromARGB(117, 160, 160, 160), 
@@ -57,7 +99,8 @@ class KeyboardWidgets {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: isActive ? Colors.white : Colors.black,
+              color: _getShiftTextColor(shiftState, isActive),
+              fontWeight: _getShiftFontWeight(shiftState),
             ),
           ),
         ),
@@ -80,16 +123,18 @@ class KeyboardWidgets {
     bool isUpperCase, 
     Function(String) onKeyPress,
     VoidCallback onToggleCase,
-    VoidCallback onBackspace,
-  ) {
+    VoidCallback onBackspace, {
+    dynamic shiftState,
+  }) {
     return Row(
       children: [
-        // Shift key
+        // Shift key with three states
         Expanded(
           child: buildSpecialKey(
-            '⇧',
+            _getShiftDisplayText(shiftState),
             onTap: onToggleCase,
             isActive: isUpperCase,
+            shiftState: shiftState,
           ),
         ),
         

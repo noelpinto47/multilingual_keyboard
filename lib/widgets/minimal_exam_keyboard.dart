@@ -4,6 +4,13 @@ import '../models/keyboard_layout.dart';
 import '../widgets/keyboard_widgets.dart';
 import '../services/native_keyboard_service.dart';
 
+// Enum for three-state shift key behavior
+enum ShiftState {
+  off,        // lowercase
+  single,     // capitalize next letter only
+  capsLock,   // all letters capitalized
+}
+
 class MinimalExamKeyboard extends StatefulWidget {
   final List<String> supportedLanguages; // e.g., ['en', 'hi', 'es']
   final Function(String)? onTextInput; // Optional fallback for non-native platforms
@@ -23,12 +30,20 @@ class MinimalExamKeyboard extends StatefulWidget {
 class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   String _currentLanguage = 'en';
   final Map<String, List<List<String>>> _layouts = {};
-  bool _isUpperCase = false; // Manual control only
+  
+  // Three-state shift key management
+  ShiftState _shiftState = ShiftState.off;
+  bool get _isUpperCase => _shiftState != ShiftState.off;
+  
   bool _showNumericKeyboard = false;
   
   // Native keyboard integration
   late final NativeKeyboardService _nativeKeyboard;
   bool _isNativeAvailable = false;
+  
+  // Double tap detection for caps lock
+  DateTime? _lastShiftTap;
+  static const doubleTapThreshold = Duration(milliseconds: 300);
   
   @override
   void initState() {
@@ -61,10 +76,17 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   // CRITICAL PATH: This runs on every key press - OPTIMIZED FOR NATIVE
   Future<void> _onKeyPress(String key) async {
     try {
-      // Handle manual capitalization only
+      // Handle three-state capitalization
       String finalKey = key;
       if (_isUpperCase && key.length == 1 && key.toLowerCase() != key.toUpperCase()) {
         finalKey = key.toUpperCase();
+        
+        // Auto-turn off shift after single letter (if in single mode)
+        if (_shiftState == ShiftState.single) {
+          setState(() {
+            _shiftState = ShiftState.off;
+          });
+        }
       }
       
       // Native Android integration - FASTEST PATH
@@ -103,10 +125,37 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     }
   }
 
+  /// Handles three-state shift key behavior:
+  /// - Single tap: off → single → off (capitalize next letter only)
+  /// - Double tap: toggles caps lock on/off (capitalize all letters)
   void _toggleCase() {
+    final now = DateTime.now();
+    final isDoubleTap = _lastShiftTap != null && 
+        now.difference(_lastShiftTap!) < doubleTapThreshold;
+    
     setState(() {
-      _isUpperCase = !_isUpperCase;
+      if (isDoubleTap) {
+        // Double tap: toggle caps lock mode
+        _shiftState = _shiftState == ShiftState.capsLock 
+            ? ShiftState.off 
+            : ShiftState.capsLock;
+      } else {
+        // Single tap: cycle through single/off states
+        switch (_shiftState) {
+          case ShiftState.off:
+            _shiftState = ShiftState.single; // Next letter will be capitalized
+            break;
+          case ShiftState.single:
+            _shiftState = ShiftState.off; // Turn off capitalization
+            break;
+          case ShiftState.capsLock:
+            _shiftState = ShiftState.off; // Exit caps lock
+            break;
+        }
+      }
     });
+    
+    _lastShiftTap = now;
   }
 
   void _toggleNumericKeyboard() {
@@ -301,6 +350,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
               _onKeyPress, 
               _toggleCase, 
               _onBackspace,
+              shiftState: _shiftState,
             ),
           
           // Row 4: Unified bottom row
