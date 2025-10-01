@@ -82,7 +82,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
         finalKey = key.toUpperCase();
         
         // Auto-turn off shift after single letter (if in single mode)
-        if (_shiftState == ShiftState.single) {
+        if (_shiftState == ShiftState.single && mounted) {
           setState(() {
             _shiftState = ShiftState.off;
           });
@@ -133,35 +133,39 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     final isDoubleTap = _lastShiftTap != null && 
         now.difference(_lastShiftTap!) < doubleTapThreshold;
     
-    setState(() {
-      if (isDoubleTap) {
-        // Double tap: toggle caps lock mode
-        _shiftState = _shiftState == ShiftState.capsLock 
-            ? ShiftState.off 
-            : ShiftState.capsLock;
-      } else {
-        // Single tap: cycle through single/off states
-        switch (_shiftState) {
-          case ShiftState.off:
-            _shiftState = ShiftState.single; // Next letter will be capitalized
-            break;
-          case ShiftState.single:
-            _shiftState = ShiftState.off; // Turn off capitalization
-            break;
-          case ShiftState.capsLock:
-            _shiftState = ShiftState.off; // Exit caps lock
-            break;
+    if (mounted) {
+      setState(() {
+        if (isDoubleTap) {
+          // Double tap: toggle caps lock mode
+          _shiftState = _shiftState == ShiftState.capsLock 
+              ? ShiftState.off 
+              : ShiftState.capsLock;
+        } else {
+          // Single tap: cycle through single/off states
+          switch (_shiftState) {
+            case ShiftState.off:
+              _shiftState = ShiftState.single; // Next letter will be capitalized
+              break;
+            case ShiftState.single:
+              _shiftState = ShiftState.off; // Turn off capitalization
+              break;
+            case ShiftState.capsLock:
+              _shiftState = ShiftState.off; // Exit caps lock
+              break;
+          }
         }
-      }
-    });
+      });
+    }
     
     _lastShiftTap = now;
   }
 
   void _toggleNumericKeyboard() {
-    setState(() {
-      _showNumericKeyboard = !_showNumericKeyboard;
-    });
+    if (mounted) {
+      setState(() {
+        _showNumericKeyboard = !_showNumericKeyboard;
+      });
+    }
   }
 
   void _toggleLanguageSelector() {
@@ -169,9 +173,11 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   }
 
   void _switchLanguage(String language) {
-    setState(() {
-      _currentLanguage = language;
-    });
+    if (mounted) {
+      setState(() {
+        _currentLanguage = language;
+      });
+    }
   }
 
   /// Get display code for language indicator on spacebar

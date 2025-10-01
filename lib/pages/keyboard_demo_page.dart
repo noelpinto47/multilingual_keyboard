@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:multilingual_keyboard/models/keyboard_layout.dart';
 import '../widgets/minimal_exam_keyboard.dart';
 import '../widgets/native_text_input.dart';
 import '../services/performance_service.dart';
@@ -71,8 +72,14 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                     });
                   },
                   onFocusLost: () {
-                    setState(() {
-                      _showKeyboard = false;
+                    // Don't hide keyboard immediately on focus lost
+                    // This prevents keyboard from disappearing when dialogs open
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (mounted && !FocusScope.of(context).hasFocus) {
+                        setState(() {
+                          _showKeyboard = false;
+                        });
+                      }
                     });
                   },
                   decoration: const InputDecoration(
@@ -126,7 +133,7 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
             child: _showKeyboard
                 ? MinimalExamKeyboard(
                     key: const ValueKey('keyboard'),
-                    supportedLanguages: const ['en', 'hi', 'es', 'fr'],
+                    supportedLanguages: KeyboardLayout.supportedLanguages,
                     useNativeKeyboard: true, // Enable native integration
                     onTextInput: (text) {
                       // This is now a fallback for non-native platforms only
