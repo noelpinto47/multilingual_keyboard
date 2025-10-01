@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class KeyboardWidgets {
   
-  static Widget buildKey(String key, bool isUpperCase, Function(String) onKeyPress) {
+  static Widget buildKey(String key, bool isUpperCase, Function(String) onKeyPress, {double? keyHeight}) {
     String displayKey = key;
     
     // Handle case conversion for letters
@@ -13,7 +13,8 @@ class KeyboardWidgets {
     return GestureDetector(
       onTap: () => onKeyPress(isUpperCase ? displayKey : key),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
+        height: keyHeight,
+        padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(6),
@@ -22,8 +23,9 @@ class KeyboardWidgets {
         child: Center(
           child: Text(
             displayKey,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: keyHeight != null ? (keyHeight * 0.4).clamp(12.0, 18.0) : 18,
+              fontWeight: FontWeight.normal,
               color: Colors.black,
             ),
           ),
@@ -66,24 +68,25 @@ class KeyboardWidgets {
   }
   
   // Helper method to get shift font weight based on state
-  static FontWeight _getShiftFontWeight(dynamic shiftState) {
-    if (shiftState.toString().contains('capsLock')) {
-      return FontWeight.bold; // Bold for caps lock
-    } else {
-      return FontWeight.normal; // Normal weight
-    }
-  }
+  // static FontWeight _getShiftFontWeight(dynamic shiftState) {
+  //   if (shiftState.toString().contains('capsLock')) {
+  //     return FontWeight.bold; // Bold for caps lock
+  //   } else {
+  //     return FontWeight.normal; // Normal weight
+  //   }
+  // }
   
-  static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false, dynamic shiftState}) {
+  static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false, dynamic shiftState, double? keyHeight}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9.0), // Match regular key padding
+        height: keyHeight,
+        padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
         decoration: BoxDecoration(
           color: _getShiftKeyColor(shiftState, isActive),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: const Color.fromARGB(117, 160, 160, 160), 
+            color: const Color.fromARGB(125, 249, 249, 249), 
             width: 1
           ),
           boxShadow: [
@@ -95,12 +98,14 @@ class KeyboardWidgets {
           ],
         ),
         child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: _getShiftTextColor(shiftState, isActive),
-              fontWeight: _getShiftFontWeight(shiftState),
+          child: FittedBox(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: keyHeight != null ? (keyHeight * 0.35).clamp(10.0, 16.0) : 16,
+                color: _getShiftTextColor(shiftState, isActive),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -108,11 +113,11 @@ class KeyboardWidgets {
     );
   }
 
-  static Widget buildKeyRow(List<String> keys, bool isUpperCase, Function(String) onKeyPress) {
+  static Widget buildKeyRow(List<String> keys, bool isUpperCase, Function(String) onKeyPress, {double? keyHeight}) {
     return Row(
       children: keys.map((key) {
         return Expanded(
-          child: buildKey(key, isUpperCase, onKeyPress),
+          child: buildKey(key, isUpperCase, onKeyPress, keyHeight: keyHeight),
         );
       }).toList(),
     );
@@ -125,6 +130,7 @@ class KeyboardWidgets {
     VoidCallback onToggleCase,
     VoidCallback onBackspace, {
     dynamic shiftState,
+    double? keyHeight,
   }) {
     return Row(
       children: [
@@ -135,13 +141,14 @@ class KeyboardWidgets {
             onTap: onToggleCase,
             isActive: isUpperCase,
             shiftState: shiftState,
+            keyHeight: keyHeight,
           ),
         ),
         
         // Letter keys
         ...keys.map((key) {
           return Expanded(
-            child: buildKey(key, isUpperCase, onKeyPress),
+            child: buildKey(key, isUpperCase, onKeyPress, keyHeight: keyHeight),
           );
         }),
         
@@ -151,6 +158,7 @@ class KeyboardWidgets {
           child: buildSpecialKey(
             '⌫',
             onTap: onBackspace,
+            keyHeight: keyHeight,
           ),
         ),
       ],
@@ -160,8 +168,9 @@ class KeyboardWidgets {
   static Widget buildNumericBottomRow(
     List<String> keys, 
     Function(String) onKeyPress,
-    VoidCallback onBackspace,
-  ) {
+    VoidCallback onBackspace, {
+    double? keyHeight,
+  }) {
     return Row(
       children: [
         // Special symbols key (wider)
@@ -170,13 +179,14 @@ class KeyboardWidgets {
           child: buildSpecialKey(
             keys[0], // '#+='
             onTap: () => onKeyPress(keys[0]),
+            keyHeight: keyHeight,
           ),
         ),
         
         // Regular symbol keys
         ...keys.skip(1).map((key) {
           return Expanded(
-            child: buildKey(key, false, onKeyPress),
+            child: buildKey(key, false, onKeyPress, keyHeight: keyHeight),
           );
         }),
         
@@ -186,6 +196,7 @@ class KeyboardWidgets {
           child: buildSpecialKey(
             '⌫',
             onTap: onBackspace,
+            keyHeight: keyHeight,
           ),
         ),
       ],

@@ -174,16 +174,46 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     });
   }
 
-
+  /// Get display code for language indicator on spacebar
+  String _getLanguageDisplayCode(String languageCode) {
+    switch (languageCode) {
+      case 'en':
+        return 'eng';
+      case 'hi':
+        return 'hin';
+      case 'es':
+        return 'spa';
+      case 'fr':
+        return 'fra';
+      default:
+        return languageCode.toLowerCase();
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8E8E8), // Light keyboard background
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+    
+    // Responsive keyboard height management:
+    // - Landscape: Limit to 40% of screen height to keep text field visible
+    // - Portrait: Limit to 50% of screen height as requested
+    final maxKeyboardHeight = isLandscape 
+        ? screenSize.height * 0.4  // 40% max in landscape
+        : screenSize.height * 0.5; // 50% max in portrait
+    
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: maxKeyboardHeight,
+        minHeight: 0,
       ),
-      child: _buildKeyboardLayout(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8E8E8), // Light keyboard background
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: _buildAdaptiveKeyboardLayout(maxKeyboardHeight),
+      ),
     );
   }
 
@@ -321,70 +351,131 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       },
     );
   }
-  
-  Widget _buildKeyboardLayout() {
+
+  Widget _buildAdaptiveKeyboardLayout(double availableHeight) {
     if (_showNumericKeyboard) {
-      return _buildNumericKeyboardLayout();
+      return _buildAdaptiveNumericKeyboardLayout(availableHeight);
     }
     
     final layout = _layouts[_currentLanguage] ?? [];
     
-    return Padding(
-      padding: const EdgeInsets.all(1.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // Size to content
-        children: [
-          // Row 1: First letter row
-          if (layout.isNotEmpty) 
-            KeyboardWidgets.buildKeyRow(layout[0], _isUpperCase, _onKeyPress),
-          
-          // Row 2: Second letter row
-          if (layout.length > 1) 
-            KeyboardWidgets.buildKeyRow(layout[1], _isUpperCase, _onKeyPress),
-          
-          // Row 3: Third letter row with shift and backspace
-          if (layout.length > 2) 
-            KeyboardWidgets.buildBottomRow(
-              layout[2], 
-              _isUpperCase, 
-              _onKeyPress, 
-              _toggleCase, 
-              _onBackspace,
-              shiftState: _shiftState,
-            ),
-          
-          // Row 4: Unified bottom row
-          _buildUnifiedBottomRow(),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildNumericKeyboardLayout() {
-    final layout = KeyboardLayout.getNumericLayout();
+    // Calculate adaptive key height dynamically based on layout length
+    const double padding = 8.0; // Total padding for container
+    final int layoutRows = layout.length; // Dynamic based on layout array length
+    final int totalRows = layoutRows + 1; // Layout rows + 1 unified bottom row
+    
+    // Set natural key heights based on screen orientation
+    const double preferredKeyHeight = 45.0; // Comfortable key size
+    const double minKeyHeight = 30.0; // Minimum usability
+    const double maxKeyHeight = 50.0; // Maximum comfort
+    
+    // Calculate if we need to compress keys to fit in available space
+    final double naturalKeyboardHeight = (preferredKeyHeight * totalRows) + padding;
+    final double adaptiveKeyHeight = naturalKeyboardHeight <= availableHeight
+        ? preferredKeyHeight // Use natural size if it fits
+        : ((availableHeight - padding) / totalRows).clamp(minKeyHeight, maxKeyHeight); // Compress if needed
     
     return Padding(
       padding: const EdgeInsets.all(1.0),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Size to content
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Row 1: Numbers
-          KeyboardWidgets.buildKeyRow(layout[0], false, _onKeyPress),
+          // Build all layout rows dynamically
+          ...layout.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final List<String> row = entry.value;
+            final bool isLastRow = index == layout.length - 1;
+            
+            return Flexible(
+              child: isLastRow
+                  // Last row uses buildBottomRow for shift and backspace functionality
+                  ? KeyboardWidgets.buildBottomRow(
+                      row, 
+                      _isUpperCase, 
+                      _onKeyPress, 
+                      _toggleCase, 
+                      _onBackspace,
+                      shiftState: _shiftState,
+                      keyHeight: adaptiveKeyHeight,
+                    )
+                  // All other rows use regular buildKeyRow
+                  : KeyboardWidgets.buildKeyRow(
+                      row, 
+                      _isUpperCase, 
+                      _onKeyPress,
+                      keyHeight: adaptiveKeyHeight,
+                    ),
+            );
+          }),
           
-          // Row 2: Symbols
-          KeyboardWidgets.buildKeyRow(layout[1], false, _onKeyPress),
-          
-          // Row 3: Special symbols with backspace
-          KeyboardWidgets.buildNumericBottomRow(layout[2], _onKeyPress, _onBackspace),
-
-          // Row 4: Unified bottom row
-          _buildUnifiedBottomRow(),
+          // Unified bottom row (spacebar, etc.)
+          Flexible(
+            child: _buildAdaptiveUnifiedBottomRow(adaptiveKeyHeight),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildUnifiedBottomRow() {
+  Widget _buildAdaptiveNumericKeyboardLayout(double availableHeight) {
+    final layout = KeyboardLayout.getNumericLayout();
+    
+    // Calculate adaptive key height for numeric layout dynamically
+    const double padding = 8.0; // Total padding from container
+    final int layoutRows = layout.length; // Dynamic based on layout array length
+    final int totalRows = layoutRows + 1; // Layout rows + 1 unified bottom row
+    
+    // Set natural key heights based on screen orientation
+    const double preferredKeyHeight = 45.0; // Comfortable key size
+    const double minKeyHeight = 30.0; // Minimum usability
+    const double maxKeyHeight = 50.0; // Maximum comfort
+    
+    // Calculate if we need to compress keys to fit in available space
+    final double naturalKeyboardHeight = (preferredKeyHeight * totalRows) + padding;
+    final double adaptiveKeyHeight = naturalKeyboardHeight <= availableHeight
+        ? preferredKeyHeight // Use natural size if it fits
+        : ((availableHeight - padding) / totalRows).clamp(minKeyHeight, maxKeyHeight); // Compress if needed
+    
+    return Padding(
+      padding: const EdgeInsets.all(1.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Build all layout rows dynamically
+          ...layout.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final List<String> row = entry.value;
+            final bool isLastRow = index == layout.length - 1;
+            
+            return Flexible(
+              child: isLastRow
+                  // Last row uses buildNumericBottomRow for special handling
+                  ? KeyboardWidgets.buildNumericBottomRow(
+                      row, 
+                      _onKeyPress, 
+                      _onBackspace,
+                      keyHeight: adaptiveKeyHeight,
+                    )
+                  // All other rows use regular buildKeyRow
+                  : KeyboardWidgets.buildKeyRow(
+                      row, 
+                      false, 
+                      _onKeyPress,
+                      keyHeight: adaptiveKeyHeight,
+                    ),
+            );
+          }),
+
+          // Unified bottom row (spacebar, etc.)
+          Flexible(
+            child: _buildAdaptiveUnifiedBottomRow(adaptiveKeyHeight),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveUnifiedBottomRow(double keyHeight) {
     return Row(
       children: [
         // Toggle button (?123 or ABC)
@@ -393,45 +484,69 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
           child: KeyboardWidgets.buildSpecialKey(
             _showNumericKeyboard ? 'ABC' : '?123',
             onTap: _toggleNumericKeyboard,
+            keyHeight: keyHeight,
           ),
         ),
         
         // Comma key
         Expanded(
           flex: 2,
-          child: KeyboardWidgets.buildKey(',', false, _onKeyPress),
+          child: KeyboardWidgets.buildKey(',', false, _onKeyPress, keyHeight: keyHeight),
         ),
         
-        // Spacebar with language switching
+        // Spacebar with language switching and language indicator
         Expanded(
           flex: 6,
           child: GestureDetector(
             onTap: () => _onKeyPress(' '),
             onLongPress: _toggleLanguageSelector,
             child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
-        ),
-        child: Center(
-          child: Text(
-            '␣',
-            style: const TextStyle(
-              fontSize: 18,
-              color: Colors.black,
+              height: keyHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
+              ),
+              child: Stack(
+                children: [
+                  // Centered space symbol
+                  const Center(
+                    child: Text(
+                      '␣',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  // Language indicator positioned on the right
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: Text(
+                        _getLanguageDisplayCode(_currentLanguage),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF888888),
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-      ),
           ),
         ),
         
         // Period key
         Expanded(
           flex: 2,
-          child: KeyboardWidgets.buildKey('.', false, _onKeyPress),
+          child: KeyboardWidgets.buildKey('.', false, _onKeyPress, keyHeight: keyHeight),
         ),
         
         // Enter key
@@ -440,6 +555,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
           child: KeyboardWidgets.buildSpecialKey(
             '↵',
             onTap: () => _onKeyPress('\n'),
+            keyHeight: keyHeight,
           ),
         ),
       ],
