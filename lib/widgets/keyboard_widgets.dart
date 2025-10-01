@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 class KeyboardWidgets {
   
@@ -10,23 +11,30 @@ class KeyboardWidgets {
       displayKey = key.toUpperCase();
     }
     
-    return GestureDetector(
-      onTap: () => onKeyPress(isUpperCase ? displayKey : key),
-      child: Container(
-        height: keyHeight,
-        padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
-        ),
-        child: Center(
-          child: Text(
-            displayKey,
-            style: TextStyle(
-              fontSize: keyHeight != null ? (keyHeight * 0.4).clamp(12.0, 18.0) : 18,
-              fontWeight: FontWeight.normal,
-              color: Colors.black,
+    return Material(
+      color: AppColors.keyBackground,
+      borderRadius: BorderRadius.circular(6),
+      elevation: 1,
+      child: InkWell(
+        onTap: () => onKeyPress(isUpperCase ? displayKey : key),
+        borderRadius: BorderRadius.circular(6),
+        splashColor: AppColors.keySplashWithAlpha,
+        highlightColor: AppColors.keyHighlightWithAlpha,
+        child: Container(
+          height: keyHeight,
+          padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.keyBorder, width: 1),
+          ),
+          child: Center(
+            child: Text(
+              displayKey,
+              style: TextStyle(
+                fontSize: keyHeight != null ? (keyHeight * 0.4).clamp(12.0, 18.0) : 18,
+                fontWeight: FontWeight.normal,
+                color: AppColors.keyText,
+              ),
             ),
           ),
         ),
@@ -48,25 +56,23 @@ class KeyboardWidgets {
   // Helper method to get shift key color based on state
   static Color _getShiftKeyColor(dynamic shiftState, bool isActive) {
     if (shiftState.toString().contains('capsLock')) {
-      return const Color(0xFF007AFF); // Bright blue for caps lock
+      return AppColors.primary; // Bright blue for caps lock
     } else if (shiftState.toString().contains('single')) {
-      return const Color(0xFF87CEEB); // Light blue for single tap
+      return AppColors.primaryLight; // Light blue for single tap
     } else {
-      return const Color(0xFFB8B8B8); // Default gray
+      return AppColors.specialKeyDefault; // Default gray
     }
   }
   
   // Helper method to get shift text color based on state
   static Color _getShiftTextColor(dynamic shiftState, bool isActive) {
-    if (shiftState.toString().contains('capsLock')) {
-      return Colors.white; // White text on blue background
-    } else if (shiftState.toString().contains('single')) {
-      return Colors.black; // Black text on light blue background
-    } else {
-      return Colors.black; // Default black
+    if (shiftState == 2) {
+      return AppColors.textOnPrimary; // White text on blue background
+    } else if (shiftState == 1) {
+      return AppColors.textOnLight; // Black text on light blue background
     }
+      return AppColors.textOnLight; // Default black
   }
-  
   // Helper method to get shift font weight based on state
   // static FontWeight _getShiftFontWeight(dynamic shiftState) {
   //   if (shiftState.toString().contains('capsLock')) {
@@ -77,34 +83,35 @@ class KeyboardWidgets {
   // }
   
   static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false, dynamic shiftState, double? keyHeight}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: keyHeight,
-        padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
-        decoration: BoxDecoration(
-          color: _getShiftKeyColor(shiftState, isActive),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: const Color.fromARGB(125, 249, 249, 249), 
-            width: 1
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              offset: const Offset(0, 1),
-              blurRadius: 2,
+    final keyColor = _getShiftKeyColor(shiftState, isActive);
+    return Material(
+      color: keyColor,
+      borderRadius: BorderRadius.circular(6),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        splashColor: AppColors.specialKeySplashWithAlpha,
+        highlightColor: AppColors.specialKeyHighlightWithAlpha,
+        child: Container(
+          height: keyHeight,
+          padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: AppColors.specialKeyBorder, 
+              width: 1
             ),
-          ],
-        ),
-        child: Center(
-          child: FittedBox(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: keyHeight != null ? (keyHeight * 0.35).clamp(10.0, 16.0) : 16,
-                color: _getShiftTextColor(shiftState, isActive),
-                fontWeight: FontWeight.w500,
+          ),
+          child: Center(
+            child: FittedBox(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: keyHeight != null ? (keyHeight * 0.35).clamp(10.0, 16.0) : 16,
+                  color: _getShiftTextColor(shiftState, isActive),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -178,7 +185,13 @@ class KeyboardWidgets {
           flex: 1,
           child: buildSpecialKey(
             keys[0], // '#+='
-            onTap: () => onKeyPress(keys[0]),
+            onTap: () {
+              if (keys[0].contains('more')) {
+                return;
+              } else {
+                onKeyPress(keys[0]);
+              }
+            },
             keyHeight: keyHeight,
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:multilingual_keyboard/models/keyboard_layout.dart';
 import '../widgets/minimal_exam_keyboard.dart';
 import '../widgets/native_text_input.dart';
 import '../services/performance_service.dart';
+import '../constants/app_colors.dart';
 
 class KeyboardDemoPage extends StatefulWidget {
   const KeyboardDemoPage({super.key});
@@ -45,7 +46,7 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
       child: Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
-        title: const Text('Multilingual Exam Keyboard', style: TextStyle(color: Colors.white),),
+        title: Text('Multilingual Exam Keyboard', style: TextStyle(color: AppColors.systemWhite)),
       ),
       body: Column(
         children: [
@@ -56,7 +57,7 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
               padding: const EdgeInsets.all(12.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
+                  border: Border.all(color: AppColors.borderGrey),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: NativeTextInput(
@@ -99,7 +100,7 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
             margin: const EdgeInsets.symmetric(horizontal: 12),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: AppColors.pageBackground,
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Row(
@@ -153,10 +154,10 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                 : Container(
                     key: const ValueKey('no-keyboard'),
                     padding: const EdgeInsets.all(24),
-                    child: const Text(
+                    child: Text(
                       'Tap the text field above to show the keyboard',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: AppColors.textGreyDark,
                         fontSize: 16,
                         fontStyle: FontStyle.italic,
                       ),

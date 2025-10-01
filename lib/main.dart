@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/keyboard_demo_page.dart';
+import 'constants/app_colors.dart';
 import 'services/performance_service.dart';
 
 void main() async {
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
       title: 'Multilingual Exam Keyboard',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent),
+        colorScheme: AppColors.lightColorScheme,
         useMaterial3: true,
       ),
       home: const KeyboardDemoPage(),

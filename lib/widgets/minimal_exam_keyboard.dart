@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import '../models/keyboard_layout.dart';
 import '../widgets/keyboard_widgets.dart';
 import '../services/native_keyboard_service.dart';
+import '../constants/app_colors.dart';
 
 // Enum for three-state shift key behavior
 enum ShiftState {
@@ -215,7 +216,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFE8E8E8), // Light keyboard background
+          color: AppColors.keyboardBackground, // Light keyboard background
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         ),
         child: _buildAdaptiveKeyboardLayout(maxKeyboardHeight),
@@ -235,7 +236,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.modalBackground,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -248,7 +249,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -259,7 +260,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Material(
-                      color: Colors.transparent,
+                      color: AppColors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
@@ -273,16 +274,16 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected 
-                                ? const Color(0xFF007AFF).withValues(alpha: 0.1)
-                                : Colors.transparent,
+                                ? AppColors.primaryWithLightAlpha
+                                : AppColors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             border: isSelected 
                                 ? Border.all(
-                                    color: const Color(0xFF007AFF),
+                                    color: AppColors.primary,
                                     width: 2,
                                   )
                                 : Border.all(
-                                    color: Colors.grey.shade300,
+                                    color: AppColors.borderLight,
                                     width: 1,
                                   ),
                           ),
@@ -297,8 +298,8 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                                         ? FontWeight.w600 
                                         : FontWeight.w500,
                                     color: isSelected 
-                                        ? const Color(0xFF007AFF)
-                                        : Colors.black87,
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -308,15 +309,15 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: isSelected 
-                                      ? const Color(0xFF007AFF)
-                                      : Colors.grey.shade600,
+                                      ? AppColors.primary
+                                      : AppColors.textGreyDark,
                                 ),
                               ),
                               if (isSelected) ...[
                                 const SizedBox(width: 8),
                                 const Icon(
                                   Icons.check_circle,
-                                  color: Color(0xFF007AFF),
+                                  color: AppColors.primary,
                                   size: 20,
                                 ),
                               ],
@@ -344,7 +345,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                     child: const Text(
                       'Close',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: AppColors.textGreyDark,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -510,9 +511,9 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
               height: keyHeight,
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.keyBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color.fromARGB(124, 208, 208, 208), width: 1),
+                border: Border.all(color: AppColors.keyBorder, width: 1),
               ),
               child: Stack(
                 children: [
@@ -522,7 +523,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                       '␣',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.black,
+                        color: AppColors.keyText,
                       ),
                     ),
                   ),
@@ -536,7 +537,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                         _getLanguageDisplayCode(_currentLanguage),
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF888888),
+                          color: AppColors.textGrey,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0.3,
                         ),
