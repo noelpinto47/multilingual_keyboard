@@ -34,9 +34,16 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   String _currentLanguage = 'en';
   final Map<String, List<List<String>>> _layouts = {};
   
-  // Three-state shift key management
+  // Layout page management for non-English keyboards
+  int _currentLayoutPage = 0;
+  final Map<String, int> _maxLayoutPages = {'hi': 4, 'mr': 4}; // Hindi and Marathi have 4 pages
+  
+  // Selected letter for dynamic top row (vowel attachments)
+  String? _selectedLetter;
+  
+  // Three-state shift key management (only for English)
   ShiftState _shiftState = ShiftState.off;
-  bool get _isUpperCase => _shiftState != ShiftState.off;
+  bool get _isUpperCase => _shiftState != ShiftState.off && _currentLanguage == 'en';
   
   bool _showNumericKeyboard = false;
   
@@ -72,13 +79,121 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     // Pre-load all language layouts into memory
     // No dynamic loading during typing = consistent performance
     for (final lang in widget.supportedLanguages) {
-      _layouts[lang] = KeyboardLayout.getLayoutForLanguage(lang);
+      _layouts[lang] = KeyboardLayout.getLayoutForLanguage(lang, page: 0);
+    }
+  }
+
+  // Get current layout based on language, page, and selected letter
+  List<List<String>> _getCurrentLayout() {
+    return KeyboardLayout.getLayoutForLanguage(
+      _currentLanguage, 
+      page: _currentLayoutPage,
+      selectedLetter: _selectedLetter,
+    );
+  }
+
+  // Switch to next layout page (for non-English keyboards)
+  void _switchLayoutPage() {
+    if (_currentLanguage == 'en') return; // English doesn't have layout pages
+    
+    final maxPages = _maxLayoutPages[_currentLanguage] ?? 1;
+    setState(() {
+      _currentLayoutPage = (_currentLayoutPage + 1) % maxPages;
+      _selectedLetter = null; // Clear selection when switching pages
+    });
+  }
+
+  // Get layout page indicator text
+  String _getLayoutPageText() {
+    if (_currentLanguage == 'en') return '';
+    final maxPages = _maxLayoutPages[_currentLanguage] ?? 1;
+    return '${_currentLayoutPage + 1}/$maxPages';
+  }
+
+  // Handle letter selection for dynamic top row
+  void _handleLetterSelection(String key) {
+    if (mounted) {
+      setState(() {
+        // Check if the pressed key is a consonant
+        if (KeyboardLayout.isConsonant(key, _currentLanguage)) {
+          _selectedLetter = key;
+        } 
+        // For other keys (vowels, symbols), clear selection
+        else if (_isMainVowel(key)) {
+          _selectedLetter = null;
+        }
+      });
+    }
+  }
+
+  // Check if the key is a vowel attachment for the selected letter
+  bool _isVowelAttachment(String key) {
+    if (_selectedLetter == null) return false;
+    final attachments = KeyboardLayout.getVowelAttachments(_selectedLetter!, _currentLanguage);
+    return attachments.contains(key);
+  }
+
+  // Check if the key is a main vowel
+  bool _isMainVowel(String key) {
+    final mainVowels = KeyboardLayout.getMainVowels(_currentLanguage);
+    return mainVowels.contains(key);
+  }
+
+  // Check if the key is a second row attachment for the selected letter
+  bool _isSecondRowAttachment(String key) {
+    if (_selectedLetter == null) return false;
+    final attachments = KeyboardLayout.getSecondRowAttachments(_selectedLetter!, _currentLanguage);
+    return attachments.contains(key);
+  }
+
+  // Check if the key is a last row attachment for the selected letter
+  bool _isLastRowAttachment(String key) {
+    if (_selectedLetter == null) return false;
+    final attachments = KeyboardLayout.getLastRowAttachments(_selectedLetter!, _currentLanguage);
+    return attachments.contains(key);
+  }
+
+  // Replace the last consonant with consonant+vowel attachment
+  Future<void> _replaceConsonantWithAttachment(String attachment) async {
+    try {
+      // First, delete the previous consonant (backspace)
+      if (_isNativeAvailable) {
+        await _nativeKeyboard.deleteBackward(1);
+        // Then type the attachment (which is the full consonant+vowel combination)
+        await _nativeKeyboard.insertText(attachment);
+      } else {
+        // Fallback: send backspace then the attachment
+        widget.onTextInput?.call('⌫');
+        widget.onTextInput?.call(attachment);
+      }
+    } catch (e) {
+      // Fallback on error
+      widget.onTextInput?.call('⌫');
+      widget.onTextInput?.call(attachment);
     }
   }
   
   // CRITICAL PATH: This runs on every key press - OPTIMIZED FOR NATIVE
   Future<void> _onKeyPress(String key) async {
     try {
+      // Handle vowel, second row, and last row attachment replacement for Hindi/Marathi
+      if (_currentLanguage != 'en' && _currentLayoutPage == 0 && _selectedLetter != null && 
+          (_isVowelAttachment(key) || _isSecondRowAttachment(key) || _isLastRowAttachment(key))) {
+        // Replace the consonant with consonant+attachment
+        await _replaceConsonantWithAttachment(key);
+        if (mounted) {
+          setState(() {
+            _selectedLetter = null; // Clear selection after applying attachment
+          });
+        }
+        return; // Don't process this key normally
+      }
+      
+      // Handle letter selection for dynamic top row (Hindi/Marathi only)
+      if (_currentLanguage != 'en' && _currentLayoutPage == 0) {
+        _handleLetterSelection(key);
+      }
+      
       // Handle three-state capitalization
       String finalKey = key;
       if (_isUpperCase && key.length == 1 && key.toLowerCase() != key.toUpperCase()) {
@@ -112,6 +227,13 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
   
   Future<void> _onBackspace() async {
     try {
+      // Clear selected letter to revert top row to default vowels
+      if (_selectedLetter != null && mounted) {
+        setState(() {
+          _selectedLetter = null;
+        });
+      }
+      
       // Native Android integration - FASTEST PATH
       if (_isNativeAvailable) {
         final success = await _nativeKeyboard.deleteBackward(1);
@@ -128,39 +250,42 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     }
   }
 
-  /// Handles three-state shift key behavior:
-  /// - Single tap: off → single → off (capitalize next letter only)
-  /// - Double tap: toggles caps lock on/off (capitalize all letters)
+  /// Handles shift key behavior - caps lock for English, layout switching for others
   void _toggleCase() {
-    final now = DateTime.now();
-    final isDoubleTap = _lastShiftTap != null && 
-        now.difference(_lastShiftTap!) < doubleTapThreshold;
-    
-    if (mounted) {
-      setState(() {
-        if (isDoubleTap) {
-          // Double tap: toggle caps lock mode
-          _shiftState = _shiftState == ShiftState.capsLock 
-              ? ShiftState.off 
-              : ShiftState.capsLock;
-        } else {
-          // Single tap: cycle through single/off states
-          switch (_shiftState) {
-            case ShiftState.off:
-              _shiftState = ShiftState.single; // Next letter will be capitalized
-              break;
-            case ShiftState.single:
-              _shiftState = ShiftState.off; // Turn off capitalization
-              break;
-            case ShiftState.capsLock:
-              _shiftState = ShiftState.off; // Exit caps lock
-              break;
+    if (_currentLanguage == 'en') {
+      // English: Handle caps lock functionality
+      final now = DateTime.now();
+      final isDoubleTap = _lastShiftTap != null && 
+          now.difference(_lastShiftTap!) < doubleTapThreshold;
+      
+      if (mounted) {
+        setState(() {
+          if (isDoubleTap) {
+            // Double tap: toggle caps lock mode
+            _shiftState = _shiftState == ShiftState.capsLock 
+                ? ShiftState.off 
+                : ShiftState.capsLock;
+          } else {
+            // Single tap: cycle through single/off states
+            switch (_shiftState) {
+              case ShiftState.off:
+                _shiftState = ShiftState.single; // Next letter will be capitalized
+                break;
+              case ShiftState.single:
+                _shiftState = ShiftState.off; // Turn off capitalization
+                break;
+              case ShiftState.capsLock:
+                _shiftState = ShiftState.off; // Exit caps lock
+                break;
+            }
           }
-        }
-      });
+        });
+      }
+      _lastShiftTap = now;
+    } else {
+      // Non-English: Switch layout pages
+      _switchLayoutPage();
     }
-    
-    _lastShiftTap = now;
   }
 
   void _toggleNumericKeyboard() {
@@ -179,6 +304,8 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     if (mounted) {
       setState(() {
         _currentLanguage = language;
+        _currentLayoutPage = 0; // Reset to first page when switching languages
+        _selectedLetter = null; // Clear selection when switching languages
       });
     }
   }
@@ -353,7 +480,7 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
       return _buildAdaptiveNumericKeyboardLayout(availableHeight);
     }
     
-    final layout = _layouts[_currentLanguage] ?? [];
+    final layout = _getCurrentLayout();
     
     // Calculate adaptive key height dynamically based on layout length
     const double padding = 8.0; // Total padding for container
@@ -393,6 +520,8 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                       _onBackspace,
                       shiftState: _shiftState,
                       keyHeight: adaptiveKeyHeight,
+                      currentLanguage: _currentLanguage,
+                      layoutPageText: _getLayoutPageText(),
                     )
                   // All other rows use regular buildKeyRow
                   : KeyboardWidgets.buildKeyRow(

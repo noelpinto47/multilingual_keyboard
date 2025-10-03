@@ -137,10 +137,48 @@ class KeyboardWidgets {
           ),
           child: Center(
             child: SvgPicture.asset(
-              color: shiftState == ShiftState.off ? Colors.black26 : null,
               iconPath,
               width: shiftState is ShiftState && shiftState == ShiftState.capsLock ? 12 : 8,
               height: shiftState is ShiftState && shiftState == ShiftState.capsLock ? 12 : 8,
+              colorFilter: shiftState == ShiftState.off 
+                  ? ColorFilter.mode(Colors.black26, BlendMode.srcIn)
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Special method for building layout switcher key (for non-English keyboards)
+  static Widget buildLayoutSwitcherKey({VoidCallback? onTap, required String layoutPageText, double? keyHeight}) {
+    return Material(
+      color: AppColors.specialKeyDefault,
+      borderRadius: BorderRadius.circular(6),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        splashColor: AppColors.specialKeySplashWithAlpha,
+        highlightColor: AppColors.specialKeyHighlightWithAlpha,
+        child: Container(
+          height: keyHeight,
+          padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: AppColors.specialKeyBorder, 
+              width: 1
+            ),
+          ),
+          child: Center(
+            child: Text(
+              layoutPageText,
+              style: TextStyle(
+                fontSize: keyHeight != null ? (keyHeight * 0.35).clamp(10.0, 16.0) : 16,
+                color: AppColors.textOnLight,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -166,17 +204,25 @@ class KeyboardWidgets {
     VoidCallback onBackspace, {
     dynamic shiftState,
     double? keyHeight,
+    String? currentLanguage,
+    String? layoutPageText,
   }) {
     return Row(
       children: [
-        // Shift key with three states
+        // Shift key for English, Layout switcher for other languages
         Expanded(
-          child: buildShiftKey(
-            onTap: onToggleCase,
-            isActive: isUpperCase,
-            shiftState: shiftState,
-            keyHeight: keyHeight,
-          ),
+          child: (currentLanguage == 'en') 
+            ? buildShiftKey(
+                onTap: onToggleCase,
+                isActive: isUpperCase,
+                shiftState: shiftState,
+                keyHeight: keyHeight,
+              )
+            : buildLayoutSwitcherKey(
+                onTap: onToggleCase,
+                layoutPageText: layoutPageText ?? '1/4',
+                keyHeight: keyHeight,
+              ),
         ),
         
         // Letter keys
