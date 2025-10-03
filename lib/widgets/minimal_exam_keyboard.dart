@@ -371,100 +371,102 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
               color: AppColors.modalBackground,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Modal title
-                const Text(
-                  'Select Language',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Modal title
+                  const Text(
+                    'Select Language',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Language options
-                ...widget.supportedLanguages.map((lang) {
-                  final isSelected = _currentLanguage == lang;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Material(
-                      color: AppColors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          _switchLanguage(lang);
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? AppColors.primaryWithLightAlpha
-                                : AppColors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  KeyboardLayout.getLanguageName(lang),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: isSelected 
-                                        ? FontWeight.w600 
-                                        : FontWeight.w500,
-                                    color: isSelected 
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
+                  const SizedBox(height: 16),
+                  
+                  // Language options
+                  ...widget.supportedLanguages.map((lang) {
+                    final isSelected = _currentLanguage == lang;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: AppColors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            _switchLanguage(lang);
+                            Navigator.of(context).pop();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected 
+                                  ? AppColors.primaryWithLightAlpha
+                                  : AppColors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    KeyboardLayout.getLanguageName(lang),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: isSelected 
+                                          ? FontWeight.w600 
+                                          : FontWeight.w500,
+                                      color: isSelected 
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 8),
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                ),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }),
-                
-                const SizedBox(height: 16),
-                
-                // Close button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+                    );
+                  }),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Close button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Close',
-                      style: TextStyle(
-                        color: AppColors.textGreyDark,
-                        fontWeight: FontWeight.w500,
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(
+                          color: AppColors.textGreyDark,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
