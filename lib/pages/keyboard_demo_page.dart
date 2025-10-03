@@ -15,6 +15,7 @@ class KeyboardDemoPage extends StatefulWidget {
 class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
   final TextEditingController _textController = TextEditingController();
   bool _showKeyboard = false;
+  bool _isDialogOpen = false;
   
   // Handle back button press - close keyboard if open, otherwise do nothing
   Future<bool> _onWillPop() async {
@@ -45,7 +46,7 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
       },
       child: Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text('Multilingual Exam Keyboard', style: TextStyle(color: AppColors.systemWhite)),
       ),
       body: Column(
@@ -75,8 +76,9 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                   onFocusLost: () {
                     // Don't hide keyboard immediately on focus lost
                     // This prevents keyboard from disappearing when dialogs open
+                    final focusScope = FocusScope.of(context);
                     Future.delayed(const Duration(milliseconds: 100), () {
-                      if (mounted && !FocusScope.of(context).hasFocus) {
+                      if (mounted && !_isDialogOpen && !focusScope.hasFocus) {
                         setState(() {
                           _showKeyboard = false;
                         });
@@ -136,6 +138,11 @@ class _KeyboardDemoPageState extends State<KeyboardDemoPage> {
                     key: const ValueKey('keyboard'),
                     supportedLanguages: KeyboardLayout.supportedLanguages,
                     useNativeKeyboard: true, // Enable native integration
+                    onDialogStateChanged: (isOpen) {
+                      setState(() {
+                        _isDialogOpen = isOpen;
+                      });
+                    },
                     onTextInput: (text) {
                       // This is now a fallback for non-native platforms only
                       // On Android, text input is handled natively for optimal performance

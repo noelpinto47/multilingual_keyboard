@@ -16,12 +16,14 @@ class MinimalExamKeyboard extends StatefulWidget {
   final List<String> supportedLanguages; // e.g., ['en', 'hi', 'es']
   final Function(String)? onTextInput; // Optional fallback for non-native platforms
   final bool useNativeKeyboard; // Enable/disable native integration
+  final Function(bool)? onDialogStateChanged; // Notify parent about dialog state
   
   const MinimalExamKeyboard({
     super.key,
     required this.supportedLanguages,
     this.onTextInput,
     this.useNativeKeyboard = true,
+    this.onDialogStateChanged,
   });
 
   @override
@@ -224,8 +226,11 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
     );
   }
 
-  void _showLanguageModal() {
-    showDialog(
+  void _showLanguageModal() async {
+    // Notify parent that dialog is opening
+    widget.onDialogStateChanged?.call(true);
+    
+    await showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
@@ -277,15 +282,6 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                                 ? AppColors.primaryWithLightAlpha
                                 : AppColors.transparent,
                             borderRadius: BorderRadius.circular(12),
-                            border: isSelected 
-                                ? Border.all(
-                                    color: AppColors.primary,
-                                    width: 2,
-                                  )
-                                : Border.all(
-                                    color: AppColors.borderLight,
-                                    width: 1,
-                                  ),
                           ),
                           child: Row(
                             children: [
@@ -301,16 +297,6 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
                                         ? AppColors.primary
                                         : AppColors.textSecondary,
                                   ),
-                                ),
-                              ),
-                              Text(
-                                lang.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: isSelected 
-                                      ? AppColors.primary
-                                      : AppColors.textGreyDark,
                                 ),
                               ),
                               if (isSelected) ...[
@@ -357,6 +343,9 @@ class _MinimalExamKeyboardState extends State<MinimalExamKeyboard> {
         );
       },
     );
+    
+    // Notify parent that dialog is closed
+    widget.onDialogStateChanged?.call(false);
   }
 
   Widget _buildAdaptiveKeyboardLayout(double availableHeight) {

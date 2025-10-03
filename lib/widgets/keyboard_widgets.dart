@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:multilingual_keyboard/widgets/minimal_exam_keyboard.dart';
 import '../constants/app_colors.dart';
 
 class KeyboardWidgets {
@@ -42,25 +44,14 @@ class KeyboardWidgets {
     );
   }
 
-  // Helper method to get shift key display text based on state
-  static String _getShiftDisplayText(dynamic shiftState) {
+  // Helper method to get shift key icon path based on state
+  static String _getShiftIconPath(dynamic shiftState) {
     if (shiftState.toString().contains('capsLock')) {
-      return '⇪'; // Caps lock symbol
+      return 'assets/icons/caps-lock-hold.svg'; // Caps lock enabled
     } else if (shiftState.toString().contains('single')) {
-      return '⇧'; // Regular shift with dot for single mode
+      return 'assets/icons/caps-lock-enabled.svg'; // Single tap - hold state
     } else {
-      return '⇧'; // Regular shift
-    }
-  }
-  
-  // Helper method to get shift key color based on state
-  static Color _getShiftKeyColor(dynamic shiftState, bool isActive) {
-    if (shiftState.toString().contains('capsLock')) {
-      return AppColors.primary; // Bright blue for caps lock
-    } else if (shiftState.toString().contains('single')) {
-      return AppColors.primaryLight; // Light blue for single tap
-    } else {
-      return AppColors.specialKeyDefault; // Default gray
+      return 'assets/icons/default-caps-lock-off.svg'; // Default off state
     }
   }
   
@@ -83,7 +74,7 @@ class KeyboardWidgets {
   // }
   
   static Widget buildSpecialKey(String label, {VoidCallback? onTap, bool isActive = false, dynamic shiftState, double? keyHeight}) {
-    final keyColor = _getShiftKeyColor(shiftState, isActive);
+    final keyColor = AppColors.specialKeyDefault;
     return Material(
       color: keyColor,
       borderRadius: BorderRadius.circular(6),
@@ -120,6 +111,43 @@ class KeyboardWidgets {
     );
   }
 
+  // Special method for building shift key with SVG icons
+  static Widget buildShiftKey({VoidCallback? onTap, bool isActive = false, dynamic shiftState, double? keyHeight}) {
+    final keyColor = AppColors.specialKeyDefault;
+    final iconPath = _getShiftIconPath(shiftState);
+    
+    return Material(
+      color: keyColor,
+      borderRadius: BorderRadius.circular(6),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        splashColor: AppColors.specialKeySplashWithAlpha,
+        highlightColor: AppColors.specialKeyHighlightWithAlpha,
+        child: Container(
+          height: keyHeight,
+          padding: keyHeight == null ? const EdgeInsets.symmetric(vertical: 8.0) : null,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: AppColors.specialKeyBorder, 
+              width: 1
+            ),
+          ),
+          child: Center(
+            child: SvgPicture.asset(
+              color: shiftState == ShiftState.off ? Colors.black26 : null,
+              iconPath,
+              width: shiftState is ShiftState && shiftState == ShiftState.capsLock ? 12 : 8,
+              height: shiftState is ShiftState && shiftState == ShiftState.capsLock ? 12 : 8,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   static Widget buildKeyRow(List<String> keys, bool isUpperCase, Function(String) onKeyPress, {double? keyHeight}) {
     return Row(
       children: keys.map((key) {
@@ -143,8 +171,7 @@ class KeyboardWidgets {
       children: [
         // Shift key with three states
         Expanded(
-          child: buildSpecialKey(
-            _getShiftDisplayText(shiftState),
+          child: buildShiftKey(
             onTap: onToggleCase,
             isActive: isUpperCase,
             shiftState: shiftState,

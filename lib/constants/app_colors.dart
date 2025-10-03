@@ -6,8 +6,8 @@ class AppColors {
   AppColors._();
 
   // Primary colors
-  static const Color primary = Color(0xFF007AFF); // iOS-style blue
-  static const Color primaryLight = Color(0xFF87CEEB); // Light blue for single tap
+  static const Color primary = Color(0xffE53936); // iOS-style blue
+  static const Color primaryLight = Color(0xffEEEEEE); // Light blue for single tap
   static const Color primaryVariant = Color(0xFFE0F2FF); // Very light blue
 
   // Key colors
